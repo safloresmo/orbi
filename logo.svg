@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Orbi">
+<rect width="512" height="512" rx="112" fill="#f8f9f6"/>
+<g transform="translate(256 290) scale(4.4)">
+<circle r="33" fill="#15171d"/><rect x="-9.5" y="-10.5" width="5" height="13" rx="2.5" fill="#ffffff"/><rect x="4.5" y="-10.5" width="5" height="13" rx="2.5" fill="#ffffff"/>
+<g transform="rotate(-10)"><path d="M-18 -27 L-20 -45 L-9.5 -37 L0 -49 L9.5 -37 L20 -45 L18 -27 Q0 -37.5 -18 -27 Z" fill="#ffc93d" stroke="#ffc93d" stroke-width="3.5" stroke-linejoin="round"/></g>
+</g>
+</svg>

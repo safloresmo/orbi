@@ -274,7 +274,7 @@ export const ACCESORIOS = {
     return { atras: "", frente: d, volando: d };
   },
   corona: c => {
-    const d = `<path d="M-21 -26 L-25 -50 L-12 -39 L0 -55 L12 -39 L25 -50 L21 -26 Z" fill="${c}" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>`;
+    const d = `<path d="M-18 -27 L-20 -45 L-9.5 -37 L0 -49 L9.5 -37 L20 -45 L18 -27 Q0 -37.5 -18 -27 Z" fill="${c}" stroke="${c}" stroke-width="3.5" stroke-linejoin="round"/>`;
     return { atras: "", frente: d, volando: d };
   },
 };

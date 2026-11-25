@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.png" alt="Logo de Orbi: el monito con corona" width="160"></p>
+
 # Orbi
 
 Un monito animado: un círculo oscuro con dos rayitas por ojos, que flota. Trae un repertorio de animaciones
