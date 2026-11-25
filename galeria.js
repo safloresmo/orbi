@@ -1,5 +1,5 @@
 // Una escena corta por animación, para verlas todas juntas en galeria.html
-import { secuencia, animaciones as a } from "./monito.js";
+import { secuencia, animaciones as a, DIBUJOS } from "./monito.js";
 
 const muestras = {
   entrar: [a.entrar(), a.pausa(.8)],
@@ -24,6 +24,12 @@ const muestras = {
   "ponerse(gorra)": [a.pausa(.3), a.ponerse("gorra"), a.pausa(.8)],
   "ponerse(corona)": [a.pausa(.3), a.ponerse("corona", { color: "#ffc93d" }), a.pausa(.8)],
   quitarse: [a.ponerse("gorra"), a.pausa(.4), a.quitarse("gorra"), a.pausa(.6)],
+  "entrar(izquierda)": [a.entrar({ desde: "izquierda" }), a.pausa(.8)],
+  "salir(izquierda)": [a.pausa(.5), a.salir({ hacia: "izquierda" }), a.pausa(.3)],
+  "aparecer + vibrar": [a.pausa(.2), a.aparecer("o", DIBUJOS.telefono(), { en: [70, 10] }), a.vibrar("o", 1.2), a.desaparecer("o"), a.pausa(.3)],
+  tomar: [a.aparecer("o", DIBUJOS.estrella(), { en: [80, -40] }), a.tomar("o", { en: [0, -44] }), a.pausa(.9), a.desaparecer("o")],
+  moverObjeto: [a.aparecer("o", DIBUJOS.corazon(), { en: [-80, 20] }), a.moverObjeto("o", [80, -20]), a.moverObjeto("o", [-80, 20]), a.desaparecer("o")],
+  "globo de diálogo": [a.pausa(.2), a.aparecer("o", DIBUJOS.globo("Hola"), { en: [10, -62], mira: false }), a.pausa(1.2), a.desaparecer("o")],
 };
 
 export default Object.entries(muestras).map(([nombre, pasos]) => ({

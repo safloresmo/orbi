@@ -67,8 +67,8 @@ Cada una deja a Orbi en reposo, así que se encadenan en cualquier orden.
 
 | Animación | Segundos | Qué hace |
 |---|---|---|
-| `entrar({ en })` | 1.45 | Baja en un columpio en U y se asienta |
-| `salir()` | 1.05 | Toma impulso, se deja caer y sale por la derecha |
+| `entrar({ en, desde })` | 1.45 | Baja en un columpio en U y se asienta; `desde` "derecha" o "izquierda" |
+| `salir({ hacia })` | 1.05 | Toma impulso, se deja caer y sale; `hacia` "derecha" o "izquierda" |
 | `asomarse({ x })` | 2.2 | Se asoma por abajo, mira a los lados y se esconde |
 | `moverA([x, y], dura)` | 0.8 | Se desliza en arco a otro punto |
 | `flotar(dura)` | 2 | Se mece en su sitio |
@@ -87,35 +87,53 @@ Cada una deja a Orbi en reposo, así que se encadenan en cualquier orden.
 | `crecer(factor, dura)` | 0.4 | Cambia de tamaño y se queda así |
 | `ponerse(tipo, { color, desde, crece })` | 1.4 | Le llega un accesorio volando y se lo pone |
 | `quitarse(tipo)` | 0.8 | Suelta ese accesorio, que sale volando |
+| `aparecer(id, dibujo, { en, pegado })` | 0.6 | Aparece un objeto; Orbi lo mira |
+| `moverObjeto(id, [x, y], dura)` | 0.7 | Mueve un objeto en arco; Orbi lo sigue con la vista |
+| `vibrar(id, dura)` | 1 | El objeto se sacude (suena, tiembla) |
+| `tomar(id, { en })` | 0.7 | Orbi toma el objeto y lo lleva pegado a la cabeza |
+| `desaparecer(id)` | 0.45 | El objeto se encoge y se va |
 
 Después de `salir` o `asomarse` queda fuera de cuadro: lo siguiente tiene que ser `entrar` o `asomarse`.
 
 Accesorios: `audifonos`, `lentes`, `gorra` y `corona`.
 
-## Añadir animaciones y accesorios
+## Más allá del repertorio
 
-Todo está en `monito.js`.
+Las animaciones de la tabla son atajos, no un límite.
 
-Una animación es una entrada más en `animaciones`: una función que devuelve sus pistas, con tiempos desde 0 y
-posiciones relativas a donde está parado.
+**Un movimiento propio** es un paso escrito a mano, con las pistas que quieras:
 
 ```js
-saludar: () => ({
-  dura: 1.2,
-  pos:   [[0, [0, 0]], [.3, [0, -8], a], [1.2, [0, 0], a]],
-  ladeo: [[0, 0], [.3, 14, a], [.6, -8, a], [.9, 10, a], [1.2, 0, a]],
-  miraY: [[0, 0], [.3, -.4, a], [1.2, 0, a]],
-  parpadeos: [[.7, .25]],
-}),
+const sobresalto = {
+  dura: .7,
+  pos:     [[0, [0, 0]], [.12, [0, -14], sale], [.45, [0, 0], ambas], [.7, [0, 0]]],
+  deforma: [[0, [1, 1]], [.12, [.9, 1.14], sale], [.4, [1.05, .96], ambas], [.7, [1, 1], ambas]],
+  ojos:    [[0, 1], [.12, 1.5, pasa], [.5, 1.5], [.7, 1, ambas]],
+};
 ```
 
-Cada clave es `[tiempo, valor, curva]`. Para que encadene bien, cada pista empieza con una clave en el instante 0
-y termina en reposo: posición `[0, 0]`, tamaño 1, ladeo 0 y mirada 0.
+Pistas de Orbi: `pos`, `tam`, `ladeo`, `miraX`, `miraY`, `deforma` (aplastar y estirar), `ojos` (apertura),
+`opacidad` y `parpadeos`. Cada clave es `[tiempo, valor, curva]`. Para que encadene bien, cada pista empieza con una
+clave en el instante 0 y termina en reposo.
 
-Un accesorio es una entrada más en `ACCESORIOS`: una función del color que devuelve trozos de SVG dibujados
-alrededor del centro de la cabeza (radio 33): `atras`, `frente` y `volando`.
+**Un elemento propio** es un objeto: cualquier SVG dibujado alrededor de (0,0). Puede estar suelto en la escena o
+Orbi puede tomarlo y llevarlo.
 
-Añade una muestra a `galeria.js` para verlo junto a los demás.
+```js
+const abeja = `<ellipse rx="9" ry="6" fill="#ffc93d"/><path d="M-3 -6 V6 M3 -6 V6" stroke="#15171d" stroke-width="2.5"/>`;
+...secuencia([
+  a.aparecer("abeja", abeja, { en: [90, -40] }),
+  a.moverObjeto("abeja", [-90, -30]),
+  a.tomar("abeja", { en: [0, -44] }),
+])
+```
+
+`DIBUJOS` trae `telefono`, `corazon`, `estrella` y `globo(texto)`, un globo de diálogo para que «hable».
+
+**Un accesorio** (lo que se pone y se quita en la cabeza) es una entrada más en `ACCESORIOS`, en `monito.js`.
+
+[`telefono.js`](telefono.js) es un ejemplo completo: suena un teléfono, Orbi se sobresalta, lo contesta y sale por la
+izquierda. Grábalo con `node grabar.mjs telefono.js telefono.mp4`.
 
 ## Licencia
 
