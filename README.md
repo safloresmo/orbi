@@ -1,33 +1,12 @@
-<p align="center"><img src="logo.png" alt="Logo de Orbi: el monito con corona" width="160"></p>
+<p align="center"><img src="logo.png" alt="Logo de Orbi: el monito con corona" width="140"></p>
 
-<p align="center"><img src="portada.png" alt="Orbi, un círculo oscuro con dos rayitas por ojos, con unos audífonos naranjas, sobre fondo claro" width="640"></p>
-
-# Orbi
+<h1 align="center">Orbi</h1>
 
 Un monito animado: un círculo oscuro con dos rayitas por ojos, que flota. Trae un repertorio de animaciones
 que se encadenan como piezas y accesorios que le llegan volando. Sale como página web, como video `.mp4` o
 como `.webm` con fondo transparente para montarlo sobre otro video.
 
 ![Orbi poniéndose los audífonos](demo.gif)
-
-## Descargar
-
-- [`todos.mp4`](todos.mp4): un solo plano de 34 s con todas las animaciones y los cuatro accesorios.
-- [`monito.mp4`](monito.mp4): la escena de ejemplo.
-- Para hacer tus propios videos, clona el repo o baja el ZIP desde **Code → Download ZIP**.
-
-## Requisitos
-
-- Para verlo: cualquier navegador actual y un servidor de archivos (los módulos no cargan desde `file://`).
-- Para grabar video: [Node.js](https://nodejs.org) 18 o más nuevo y [ffmpeg](https://ffmpeg.org) compilado con
-  `librsvg` (compruébalo con `ffmpeg -decoders | grep svg`).
-
-No hay dependencias que instalar.
-
-## Configuración
-
-Orbi no necesita variables de entorno. Si algún día hace falta una, estará declarada en `.env.schema` y se
-podrá fijar en `.env.local` o como variable de entorno.
 
 ## Uso
 
@@ -44,6 +23,8 @@ node grabar.mjs todos.js todos.mp4  # graba otra escena con otro nombre
 ```
 
 Con `colores.fondo: "transparente"` sale un `.webm` con canal alfa.
+
+Para grabar hacen falta Node.js y ffmpeg.
 
 ## Usarlo desde Claude Code
 
