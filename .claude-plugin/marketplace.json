@@ -1,0 +1,14 @@
+{
+  "name": "orbi",
+  "description": "Orbi, el monito animado: plugin para hacer videos y animaciones con él.",
+  "owner": {
+    "name": "Samuel Flores"
+  },
+  "plugins": [
+    {
+      "name": "orbi",
+      "source": "./",
+      "description": "Videos y animaciones con Orbi, un monito animado en SVG: 20 animaciones encadenables, accesorios que llegan volando, rótulos y salida a mp4 o webm transparente."
+    }
+  ]
+}

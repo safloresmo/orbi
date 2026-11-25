@@ -45,6 +45,16 @@ node grabar.mjs todos.js todos.mp4  # graba otra escena con otro nombre
 
 Con `colores.fondo: "transparente"` sale un `.webm` con canal alfa.
 
+## Usarlo desde Claude Code
+
+Este repo es también un plugin de Claude Code: le pides el clip con tus palabras («un video vertical de Orbi
+poniéndose los lentes y bailando») y él escribe la escena, la revisa y la graba. Se instala así:
+
+```
+/plugin marketplace add safloresmo/orbi
+/plugin install orbi@orbi
+```
+
 ## Tu propia escena
 
 Una escena es una lista de animaciones. Edita `escena.js` o crea otro archivo igual:

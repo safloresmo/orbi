@@ -1,0 +1,12 @@
+{
+  "name": "orbi",
+  "description": "Videos y animaciones con Orbi, un monito animado en SVG: 20 animaciones encadenables, accesorios que llegan volando, rótulos y salida a mp4 o webm transparente.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Samuel Flores"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/safloresmo/orbi",
+  "repository": "https://github.com/safloresmo/orbi",
+  "icon": "logo.png"
+}
