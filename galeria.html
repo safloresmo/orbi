@@ -26,7 +26,10 @@
 
 <script type="module">
 import { monito } from "./monito.js";
-import muestras from "./galeria.js";
+// galeria.html muestra las animaciones; galeria.html?formas, las formas del cuerpo
+const formas = location.search.includes("formas");
+const muestras = (await import(formas ? "./galeria-formas.js" : "./galeria.js")).default;
+if (formas) document.querySelector("h1").textContent = document.title = "Formas del monito";
 
 const rejilla = document.getElementById("rejilla");
 const celdas = muestras.map(({ nombre, escena }) => {

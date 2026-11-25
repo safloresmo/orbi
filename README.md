@@ -2,8 +2,9 @@
 
 <h1 align="center">Orbi</h1>
 
-Un monito animado: un círculo oscuro con dos rayitas por ojos, que flota. Trae un repertorio de animaciones
-que se encadenan como piezas y accesorios que le llegan volando. Sale como página web, como video `.mp4` o
+Un monito animado: una silueta de un solo color con dos rayitas por ojos, que flota. Puede ser una bolita, un gato,
+un fantasma, una taza o lo que dibujes. Trae un repertorio de animaciones que se encadenan como piezas, estados
+(pensando, trabajando, listo), accesorios que le llegan volando y objetos que puede tomar. Sale como página web, como video `.mp4` o
 como `.webm` con fondo transparente para montarlo sobre otro video.
 
 ![Orbi poniéndose los audífonos](demo.gif)
@@ -16,11 +17,15 @@ python -m http.server 8731 --bind 127.0.0.1
 
 - <http://127.0.0.1:8731/> muestra la escena de `escena.js`, con cámara lenta y una barra para recorrerla.
 - <http://127.0.0.1:8731/galeria.html> muestra todas las animaciones a la vez.
+- <http://127.0.0.1:8731/galeria.html?formas> muestra todas las formas.
 
 ```bash
 node grabar.mjs                     # graba escena.js a monito.mp4
 node grabar.mjs todos.js todos.mp4  # graba otra escena con otro nombre
 ```
+
+`node revisar.mjs` revisa una escena antes de grabarla: busca fotogramas rotos y saltos bruscos, y escribe `hoja.png`
+(24 fotogramas de toda la escena) y `fijas.png` (el personaje en cuatro poses) para mirarlas.
 
 Con `colores.fondo: "transparente"` sale un `.webm` con canal alfa.
 
@@ -61,6 +66,32 @@ export default {
 - `tamano` y `en`, junto a `formato`, fijan el tamaño inicial y dónde empieza.
 - `accesoriosPuestos: [{ tipo: "corona", color: "#ffc93d" }]` para los que ya trae desde el inicio.
 
+## Formas
+
+El personaje no tiene que ser una bolita. Hay 36 formas de muestra y se elige una en `secuencia`:
+
+```js
+...secuencia([a.entrar(), a.pensar(), a.listo()], { formato: "cuadrado", forma: "gato" })
+```
+
+![Las 36 formas de Orbi](formas.png)
+
+Una forma propia es una silueta en SVG, dibujada alrededor de (0,0), y dónde van los ojos:
+
+```js
+const pinguino = {
+  dibujo: c => `<ellipse rx="24" ry="31" fill="${c}"/><path d="M-22 -4 L-33 14 L-22 12 Z M22 -4 L33 14 L22 12 Z" fill="${c}"/>`,
+  ojos: [0, -10],        // centro del par de ojos
+  rango: [9, 7],         // cuánto se mueven al mirar
+  cabeza: [0, -8, 22],   // dónde van accesorios y objetos: [x, y, radio]
+};
+...secuencia(pasos, { forma: pinguino })
+```
+
+También acepta las definiciones de [Open Bot Avatar](https://github.com/DominikScholz/open-bot-avatar), un formato
+abierto de avatares (una silueta y la posición de los ojos): `forma: formaDeAvatar(json)`. Las siluetas de este repo
+son dibujos propios.
+
 ## Animaciones
 
 Cada una deja a Orbi en reposo, así que se encadenan en cualquier orden.
@@ -87,6 +118,14 @@ Cada una deja a Orbi en reposo, así que se encadenan en cualquier orden.
 | `crecer(factor, dura)` | 0.4 | Cambia de tamaño y se queda así |
 | `ponerse(tipo, { color, desde, crece })` | 1.4 | Le llega un accesorio volando y se lo pone |
 | `quitarse(tipo)` | 0.8 | Suelta ese accesorio, que sale volando |
+| `pensar()` | 2.4 | Mira arriba, ladea la cabeza y le salen tres puntitos |
+| `trabajar()` | 2 | Cabecea rápido con la vista abajo |
+| `esperar()` | 2.8 | Se mece despacio y parpadea lento |
+| `bloqueado()` | 1.8 | Niega sacudiéndose y le sale un «!» |
+| `listo()` | 1.6 | Brinca de gusto y le sale una palomita |
+| `esquivar({ hacia })` | 0.6 | Se quita de un brinco hacia un lado |
+| `caer(id, dibujo, { hasta, rebotes })` | 0.7 + rebotes | Un objeto cae desde arriba y rebota |
+| `juntos(a, b, …)` | la más larga | Varias a la vez: Orbi se mueve mientras un objeto se mueve |
 | `aparecer(id, dibujo, { en, pegado })` | 0.6 | Aparece un objeto; Orbi lo mira |
 | `moverObjeto(id, [x, y], dura)` | 0.7 | Mueve un objeto en arco; Orbi lo sigue con la vista |
 | `vibrar(id, dura)` | 1 | El objeto se sacude (suena, tiembla) |

@@ -1,6 +1,9 @@
 // Motor del monito: convierte una escena (pistas de claves) en un SVG por instante.
 // No toca el DOM, así que sirve igual en el navegador (index.html) y en node (grabar.mjs).
 
+import { FORMAS, formaDeAvatar } from "./formas.js";
+export { FORMAS, formaDeAvatar };
+
 // Curvas
 export const lin = u => u;
 export const sale = u => 1 - (1 - u) ** 2;
@@ -43,6 +46,13 @@ export function suave(f, ventana, n = 8) {
 }
 console.assert(pista([[0, 0], [1, 10, lin]])(.5) === 5 && pista([[0, [0, 0]], [1, [2, 2], lin, [0, 2]]])(1)[0] === 2, "pista mal");
 console.assert(Math.abs(suave(pista([[0, 0], [1, 10, lin]]), .2)(.5) - 5) < 1e-9, "suave mal");
+
+// Resuelve la forma del cuerpo: un nombre de FORMAS o una propia { dibujo, ojos, rango, cabeza }
+function formaDe(forma = "bolita") {
+  const f = typeof forma === "object" ? { ojos: [0, 0], rango: [8, 6], cabeza: [0, 0, 30], ...forma } : FORMAS[forma];
+  if (!f || !f.dibujo) throw new Error(`No existe la forma "${forma}". Hay: ${Object.keys(FORMAS).join(", ")}`);
+  return f;
+}
 
 // Tamaño del escenario en unidades (origen en el centro) y del video en píxeles
 export const FORMATOS = {
@@ -148,6 +158,17 @@ export const animaciones = {
     return { dura: t + .3, pos, ladeo, parpadeos: [[t / 2]] };
   },
 
+  // Se quita de un brinco hacia un lado, estirado y con los ojos muy abiertos, y se queda ahí
+  esquivar: ({ hacia = "izquierda", distancia = 45 } = {}) => {
+    const x = (hacia === "derecha" ? 1 : -1) * distancia;
+    return {
+      dura: .6, fin: [x, 0],
+      pos: [[0, [0, 0]], [.3, [x, -10], s, [x / 2, -26]], [.5, [x, 0], a], [.6, [x, 0]]],
+      deforma: [[0, [1, 1]], [.14, [1.12, .9], s], [.4, [.95, 1.06], a], [.6, [1, 1], a]],
+      ojos: [[0, 1], [.1, 1.5, pasa], [.45, 1.5], [.6, 1, a]],
+      ladeo: [[0, 0], [.2, Math.sign(x) * 10, s], [.6, 0, a]],
+    };
+  },
   // Dice que sí
   asentir: () => ({
     dura: .9,
@@ -216,6 +237,63 @@ export const animaciones = {
     miraY: [[0, 0], [.3, -.5, a], [.6, -.5], [.8, 0, a]],
   }),
 
+  // Varias animaciones a la vez (Orbi se mueve mientras un objeto se mueve): dura lo que la más larga.
+  // Si dos mueven la misma pista de Orbi, manda la primera.
+  juntos: (...clips) => ctx => {
+    const partes = clips.map(c => typeof c === "function" ? c(ctx) : c);
+    const suma = { dura: Math.max(...partes.map(p => p.dura)), objetos: {}, parpadeos: [] };
+    for (const p of partes) {
+      for (const [k, v] of Object.entries(p)) {
+        if (k === "dura" || v === undefined) continue;
+        if (k === "parpadeos") suma.parpadeos.push(...v);
+        else if (k === "objetos") for (const [id, o] of Object.entries(v)) suma.objetos[id] = { ...suma.objetos[id], ...o };
+        else if (suma[k] === undefined) suma[k] = v;
+      }
+    }
+    return suma;
+  },
+
+  // --- Estados: qué está haciendo. Se repiten en bucle sin saltos. `marca: false` quita el símbolo de arriba.
+  pensar: ({ dura = 2.4, marca = true, color } = {}) => ({
+    dura,
+    miraX: [[0, 0], [.4, .55, a], [dura - .4, .55], [dura, 0, a]],
+    miraY: [[0, 0], [.4, -.7, a], [dura - .4, -.7], [dura, 0, a]],
+    ladeo: [[0, 0], [.4, 8, a], [dura - .4, 8], [dura, 0, a]],
+    pos: [[0, [0, 0]], [dura / 2, [0, -3], a], [dura, [0, 0], a]],
+    parpadeos: [[dura * .6]],
+    objetos: marca ? { _pensar: marcaDe(DIBUJOS.puntos(color), dura) } : {},
+  }),
+  trabajar: ({ dura = 2 } = {}) => {
+    const pos = [[0, [0, 0]]], miraX = [[0, 0], [.2, -.5, a]];
+    for (let t = .25, i = 0; t < dura - .2; t += .25, i++) pos.push([t, [0, i % 2 ? 0 : 3], a]);
+    for (let t = .7, i = 0; t < dura - .3; t += .5, i++) miraX.push([t, i % 2 ? -.5 : .5, a]);
+    pos.push([dura, [0, 0], a]);
+    miraX.push([dura, 0, a]);
+    return { dura, pos, miraX, miraY: [[0, 0], [.2, .55, a], [dura - .25, .55], [dura, 0, a]], ojos: [[0, 1], [.2, .8, a], [dura - .25, .8], [dura, 1, a]] };
+  },
+  esperar: ({ dura = 2.8 } = {}) => ({
+    dura,
+    pos: [[0, [0, 0]], [dura * .25, [-6, 0], a], [dura * .75, [6, 0], a], [dura, [0, 0], a]],
+    ladeo: [[0, 0], [dura * .25, -5, a], [dura * .75, 5, a], [dura, 0, a]],
+    miraX: [[0, 0], [dura * .25, -.6, a], [dura * .75, .6, a], [dura, 0, a]],
+    parpadeos: [[dura * .5, .4]],
+  }),
+  bloqueado: ({ dura = 1.8, marca = true, color } = {}) => ({
+    dura,
+    pos: [[0, [0, 0]], [.15, [-7, 0], a], [.3, [7, 0], a], [.45, [-6, 0], a], [.6, [6, 0], a], [.8, [0, 0], a], [dura, [0, 0]]],
+    ojos: [[0, 1], [.2, .45, a], [dura - .3, .45], [dura, 1, a]],
+    ladeo: [[0, 0], [.8, -6, a], [dura - .3, -6], [dura, 0, a]],
+    tam: [[0, 1], [.2, .95, a], [dura - .3, .95], [dura, 1, a]],
+    objetos: marca ? { _bloqueado: marcaDe(DIBUJOS.signo("!", color), dura) } : {},
+  }),
+  listo: ({ dura = 1.6, marca = true, color } = {}) => ({
+    dura,
+    pos: [[0, [0, 0]], [.12, [0, 5], a], [.4, [0, -30], s], [.7, [0, 0], e], [.8, [0, 3], s], [1, [0, 0], a], [dura, [0, 0]]],
+    deforma: [[0, [1, 1]], [.12, [1.08, .92], a], [.4, [.94, 1.07], s], [.72, [1.08, .92], a], [1, [1, 1], a], [dura, [1, 1]]],
+    ojos: [[0, 1], [.4, 1.3, s], [.8, .5, a], [dura - .3, .5], [dura, 1, a]],
+    objetos: marca ? { _listo: marcaDe(DIBUJOS.palomita(color), dura) } : {},
+  }),
+
   // --- Objetos: cualquier cosa que no sea Orbi. `dibujo` es SVG dibujado alrededor de (0,0).
   // Sueltos: `en` son coordenadas del escenario. Con `pegado: true`, `en` es relativo al centro de la cabeza (radio 33).
   aparecer: (id, dibujo, { en = [80, 0], pegado = false, capa = "frente", tam = 1, mira = true } = {}) => ({
@@ -228,9 +306,21 @@ export const animaciones = {
     return { dura: .45, objetos: { [id]: { tam: [[0, k], [.35, 0, e], [.45, 0]], opacidad: [[0, 1], [.3, 1], [.42, 0], [.45, 0]] } } };
   },
   // Mueve un objeto suelto en arco a otro punto del escenario; Orbi lo sigue con la vista
-  moverObjeto: (id, destino, dura = .7) => ({ objetos }) => {
+  moverObjeto: (id, destino, dura = .7, arco = 20) => ({ objetos }) => {
     const de = objetos[id]?.pos.at(-1)?.[1] ?? destino;
-    return { dura, miraA: id, objetos: { [id]: { pos: [[0, de], [dura, destino, a, [(de[0] + destino[0]) / 2, (de[1] + destino[1]) / 2 - 20]]] } } };
+    return { dura, miraA: id, objetos: { [id]: { pos: [[0, de], [dura, destino, a, [(de[0] + destino[0]) / 2, (de[1] + destino[1]) / 2 - arco]]] } } };
+  },
+  // Un objeto cae desde arriba hasta `hasta` (coordenadas del escenario) y rebota; Orbi lo mira caer
+  caer: (id, dibujo, { hasta = [0, 60], tam = 1, rebotes = 1, dura = .7 } = {}) => ({ alto }) => {
+    const [x, y] = hasta, arriba = -alto / 2 - 30, pos = [[0, [x, arriba]], [dura, [x, y], e]];
+    let t = dura, h = (y - arriba) * .22;
+    for (let i = 0; i < rebotes; i++) {
+      const d = .2 + .08 * (rebotes - i);
+      pos.push([t + d, [x, y - h], s], [t + 2 * d, [x, y], e]);
+      t += 2 * d;
+      h *= .45;
+    }
+    return { dura: t, miraA: id, objetos: { [id]: { dibujo, pos, tam: [[0, tam]], opacidad: [[0, 1]] } } };
   },
   // El objeto se sacude (un teléfono que suena, una alarma)
   vibrar: (id, dura = 1) => {
@@ -240,20 +330,34 @@ export const animaciones = {
     return { dura, miraA: id, objetos: { [id]: { giro } } };
   },
   // Orbi toma un objeto suelto: vuela hasta su cabeza y desde ahí lo lleva pegado. `en` es relativo al centro de la cabeza.
-  tomar: (id, { en = [40, 8], tam = 1 } = {}) => ({ ancla, tam: k, objetos }) => {
+  // `giro` lo deja girado al tomarlo (90 lo pone de pie). Conserva el tamaño que se le ve; `tam` lo cambia (1 = el de su dibujo junto a un Orbi de tamaño 1).
+  tomar: (id, { en = [40, 8], tam, giro = 0 } = {}) => ({ ancla, tam: k, cabeza: [cx, cy, cr], objetos }) => {
     const o = objetos[id], de = o?.pos.at(-1)?.[1] ?? ancla, t0 = o?.tam.at(-1)?.[1] ?? 1;
-    const destino = [ancla[0] + en[0] * k, ancla[1] + en[1] * k];
+    tam ??= t0 / k;
+    const destino = [ancla[0] + (cx + en[0] * cr / 33) * k, ancla[1] + (cy + en[1] * cr / 33) * k];
     return {
       dura: .7, miraA: id,
       objetos: { [id]: { pegadoEn: .55, enCabeza: en, tamPegado: tam,
         pos: [[0, de], [.55, destino, a, [(de[0] + destino[0]) / 2, Math.min(de[1], destino[1]) - 25]], [.7, destino]],
-        tam: [[0, t0], [.55, tam * k, a], [.7, tam * k]] } },
+        tam: [[0, t0], [.55, tam * k, a], [.7, tam * k]],
+        giro: [[0, o?.giro.at(-1)?.[1] ?? 0], [.55, giro, a], [.7, giro]] } },
     };
   },
 };
 
+// El símbolo que acompaña a un estado: aparece arriba a la derecha de la cabeza y se va al terminar.
+// Cada estado usa su propio objeto: un objeto tiene un solo dibujo para toda la escena.
+const marcaDe = (dibujo, dura) => ({
+  dibujo, pegado: true, pos: [[0, [31, -45]]],
+  tam: [[0, 0], [.3, 1.1, pasa], [dura - .25, 1.1], [dura - .05, 0, e], [dura, 0]],
+  opacidad: [[0, 0], [.1, 1], [dura - .15, 1], [dura - .03, 0], [dura, 0]],
+});
+
 // Dibujos listos para usar como objetos; cualquier SVG propio sirve igual
 export const DIBUJOS = {
+  puntos: (c = "#9aa0a6") => `<circle cx="-9" r="3.4" fill="${c}"/><circle r="3.4" fill="${c}"/><circle cx="9" r="3.4" fill="${c}"/>`,
+  signo: (texto = "!", c = "#ff6a3d") => `<text y="8" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="24" fill="${c}">${texto.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</text>`,
+  palomita: (c = "#22c55e") => `<path d="M-9 0 L-3 7 L10 -8" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
   telefono: (pantalla = "#3ddc97", cuerpo = "#3a3f4b") => `<rect x="-11" y="-20" width="22" height="40" rx="5" fill="${cuerpo}"/><rect x="-8.5" y="-15.5" width="17" height="27" rx="2" fill="${pantalla}"/><circle cy="15.6" r="1.7" fill="#fff" fill-opacity=".75"/>`,
   corazon: (c = "#ff4d6d") => `<path d="M0 10 C-16 -2 -10 -14 0 -6 C10 -14 16 -2 0 10 Z" fill="${c}"/>`,
   estrella: (c = "#ffc93d") => `<path d="M0 -13 L3.8 -4.2 L13 -3.6 L5.9 2.6 L8.2 12 L0 7 L-8.2 12 L-5.9 2.6 L-13 -3.6 L-3.8 -4.2 Z" fill="${c}" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>`,
@@ -266,17 +370,22 @@ export const DIBUJOS = {
 };
 
 // Encadena animaciones y devuelve las pistas de la escena, listas para monito()
-export function secuencia(pasos, { formato = "horizontal", en = [0, 0], tamano = 1 } = {}) {
+export function secuencia(pasos, { formato = "horizontal", en = [0, 0], tamano = 1, forma } = {}) {
+  const cabeza = formaDe(forma).cabeza;
   const { ancho, alto } = FORMATOS[formato];
-  const esc = { formato, posicion: [], tamano: [], ladeo: [], miraX: [], miraY: [], lanzado: [], sentido: [], deforma: [], ojos: [], opacidad: [], parpadeos: [], accesorios: [], textos: [], miradas: [] };
+  const esc = { formato, forma, posicion: [], tamano: [], ladeo: [], miraX: [], miraY: [], lanzado: [], sentido: [], deforma: [], ojos: [], opacidad: [], parpadeos: [], accesorios: [], textos: [], miradas: [] };
   const objs = {};
   let t = 0, ancla = [...en], tam = tamano, giro = 0;
   const mas = ([x, y]) => [ancla[0] + x, ancla[1] + y];
   for (let paso of pasos) {
     let rotulo;
     if (Array.isArray(paso)) [rotulo, paso] = paso;   // ["texto en pantalla", animación]
-    const c = typeof paso === "function" ? paso({ ancho, alto, ancla, tam, objetos: objs }) : paso;
-    if (rotulo) esc.textos.push({ desde: t, hasta: t + c.dura, texto: rotulo });
+    const c = typeof paso === "function" ? paso({ ancho, alto, ancla, tam, cabeza, objetos: objs }) : paso;
+    if (rotulo) {   // un rótulo se lee al menos 1.2 s aunque el paso sea más corto, y cede cuando llega el siguiente
+      const anterior = esc.textos.at(-1);
+      if (anterior && anterior.hasta > t) anterior.hasta = t;
+      esc.textos.push({ desde: t, hasta: t + Math.max(c.dura, 1.2), texto: rotulo });
+    }
     for (const [tk, v, curva, ctrl] of c.pos || []) esc.posicion.push([t + tk, mas(v), curva, ctrl && mas(ctrl)]);
     for (const [tk, v, curva] of c.tam || []) esc.tamano.push([t + tk, v * tam, curva]);
     for (const [tk, v, curva] of c.ladeo || []) esc.ladeo.push([t + tk, v + giro, curva]);
@@ -351,7 +460,15 @@ const n = v => +v.toFixed(2);
 // Prepara una escena y devuelve { duracion, fps, px, transparente, svg(t) }
 export function monito(escena) {
   const formato = FORMATOS[escena.formato || "horizontal"];
-  const col = { fondo: "#f8f9f6", cuerpo: "#15171d", ojos: "#ffffff", acento: "#ff6a3d", texto: "#15171d", ...escena.colores };
+  // La forma del cuerpo: un nombre de FORMAS o una propia { dibujo: color => svg, ojos: [x, y], rango: [rx, ry] }
+  const forma = formaDe(escena.forma);
+  const separa = forma.separa ?? 7, ojoTam = forma.ojoTam ?? 1;
+  const [cabX, cabY, cabR] = forma.cabeza, cabK = cabR / 33;   // los accesorios están dibujados para una cabeza de radio 33
+  const col = { fondo: "#f8f9f6", cuerpo: "#15171d", acento: "#ff6a3d", texto: "#15171d", ...escena.colores };
+  if (!col.ojos) {   // ojos claros sobre cuerpo oscuro y al revés, si no se eligió color
+    const [rr, gg, bb] = [1, 3, 5].map(i => parseInt(col.cuerpo.slice(i, i + 2), 16));
+    col.ojos = rr * .299 + gg * .587 + bb * .114 > 140 ? "#15171d" : "#ffffff";
+  }
   const duracion = escena.duracion;
 
   const posicion = suave(pista(escena.posicion || [[0, [0, 0]]]), .12);
@@ -380,16 +497,17 @@ export function monito(escena) {
   const accesorios = [...(escena.accesoriosPuestos || []), ...(escena.accesorios || [])].map(a => {
     if (!ACCESORIOS[a.tipo]) throw new Error(`No existe el accesorio "${a.tipo}". Hay: ${Object.keys(ACCESORIOS).join(", ")}`);
     const dibujo = ACCESORIOS[a.tipo](a.color || col.acento);
-    const fuera = a.quita === undefined ? {} : { quita: a.quita, de: posicion(a.quita), kFuera: tamano(a.quita) };
+    const enCabeza = t => { const [px, py] = posicion(t), k = tamano(t); return [px + cabX * k, py + cabY * k]; };
+    const fuera = a.quita === undefined ? {} : { quita: a.quita, de: enCabeza(a.quita), kFuera: tamano(a.quita) * cabK };
     if (a.nace === undefined) return { ...dibujo, ...fuera, nace: -1, captura: -1 };
-    const desde = a.desde || [52, -47], sobre = a.sobre || [24, -57], llega = posicion(a.captura);
+    const desde = a.desde || [52, -47], sobre = a.sobre || [24, -57], llega = enCabeza(a.captura);
     return {
       ...dibujo, ...fuera, nace: a.nace, captura: a.captura,
       aparece: pista([[a.nace, 0], [a.nace + .25, 1, sale]]),
       pos: suave(pista([[a.nace, desde], [a.nace + .25, [desde[0], desde[1] - 4], sale],
         [a.captura - .13, sobre, ambas], [a.captura, llega, entra]]), .06),
       giro: suave(pista([[a.nace, 70], [a.nace + .25, 12, sale], [a.captura - .13, -22, ambas], [a.captura, 0, entra]]), .06),
-      escala: tamano(a.captura - .1),
+      escala: tamano(a.captura - .1) * cabK,
     };
   });
 
@@ -415,7 +533,7 @@ export function monito(escena) {
     const llegando = accesorios.find(a => a.nace >= 0 && t >= a.nace && t < a.captura + .15);
     let gx = mezcla(miraX(t), 0, lanzado), gy = mezcla(miraY(t), -1, lanzado);
     if (llegando) {
-      const [cx, cy] = llegando.pos(t), dx = cx - x, dy = cy - 30 * k - y, d = Math.hypot(dx, dy) || 1;
+      const [cx, cy] = llegando.pos(t), dx = cx - x, dy = cy - 30 * k * cabK - y, d = Math.hypot(dx, dy) || 1;
       const w = rampa(llegando.nace + .1, llegando.nace + .4, t) * (1 - rampa(llegando.captura - .03, llegando.captura + .15, t));
       gx = mezcla(gx, dx / d * .9, w);
       gy = mezcla(gy, dy / d * .9, w);
@@ -428,12 +546,15 @@ export function monito(escena) {
       gx = mezcla(gx, dx / d * .9, w);
       gy = mezcla(gy, dy / d * .9, w);
     }
+    const largo = Math.hypot(gx, gy);   // la mirada no pasa del borde ni en diagonal
+    if (largo > 1) { gx /= largo; gy /= largo; }
     const cierre = Math.max(0, ...parpadeos.map(([c, a = .22]) => pulso(t, c, a)));
-    const ex = gx * 17, ey = -4 + gy * 19;
-    const ojo = dx => `<rect x="-2.5" y="-6.5" width="5" height="13" rx="2.5" fill="${col.ojos}" transform="translate(${n(ex + dx)} ${n(ey)}) scale(1 ${n(Math.max(.12, (1 - .88 * cierre) * ojos(t)))})"/>`;
+    const ex = forma.ojos[0] + gx * forma.rango[0], ey = forma.ojos[1] + gy * forma.rango[1];
+    const ojo = dx => `<rect x="-2.5" y="-6.5" width="5" height="13" rx="2.5" fill="${col.ojos}" transform="translate(${n(ex + dx)} ${n(ey)}) scale(${ojoTam} ${n(ojoTam * Math.max(.12, (1 - .88 * cierre) * ojos(t)))})"/>`;
 
     const puestos = accesorios.filter(a => t >= a.captura && !(a.quita <= t));
-    const frente = puestos.map(a => a.sigueOjos ? `<g transform="translate(${n(ex)} ${n(ey)})">${a.frente}</g>` : a.frente).join("");
+    const enLaCabeza = d => d && `<g transform="translate(${cabX} ${cabY}) scale(${n(cabK)})">${d}</g>`;
+    const frente = puestos.map(a => a.sigueOjos ? `<g transform="translate(${n(ex)} ${n(ey)})">${a.frente}</g>` : enLaCabeza(a.frente)).join("");
     const volando = accesorios.filter(a => t >= a.nace && t < a.captura).map(a => {
       const [cx, cy] = a.pos(t), flota = Math.sin(t * 6) * 1.5 * (1 - rampa(a.captura - .2, a.captura, t));
       return `<g transform="translate(${n(cx)} ${n(cy + flota)}) scale(${n(a.escala * a.aparece(t))}) rotate(${n(a.giro(t))})">${a.volando}</g>`;
@@ -447,7 +568,8 @@ export function monito(escena) {
       const op = o.opacidad(t);
       if (op < .004) return "";
       const tomado = !o.pegado && t >= o.pegadoDesde;
-      const [ox, oy] = tomado ? o.enCabeza : o.pos(t);
+      let [ox, oy] = tomado ? o.enCabeza : o.pos(t);
+      if (tomado || o.pegado) [ox, oy] = [cabX + ox * cabK, cabY + oy * cabK];
       return `<g transform="translate(${n(ox)} ${n(oy)}) rotate(${n(o.giro(t))}) scale(${n(tomado ? o.tamPegado : o.tam(t))})" opacity="${n(op)}">${o.dibujo}</g>`;
     };
     const capa = (enCabeza, cual) => objetos.filter(o => (!!o.pegado || t >= o.pegadoDesde) === enCabeza && (o.capa || "frente") === cual).map(pinta).join("");
@@ -465,8 +587,8 @@ export function monito(escena) {
     const fondo = col.fondo === "transparente" ? "" : `<rect x="${-ancho / 2}" y="${-alto / 2}" width="${ancho}" height="${alto}" fill="${col.fondo}"/>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-ancho / 2} ${-alto / 2} ${ancho} ${alto}"${medidas}>${fondo}${capa(false, "atras")}` +
       `<g transform="translate(${n(x)} ${n(y)}) rotate(${n(angulo)}) scale(${n(1 + estira)} ${n(1 / (1 + estira))}) rotate(${n(-angulo)}) scale(${n(k * fx)} ${n(k * fy)}) rotate(${n(giro)})" opacity="${n(opacidadEn(t))}">` +
-      `${puestos.map(a => a.atras).join("")}${capa(true, "atras")}<circle r="33" fill="${col.cuerpo}"/>${ojo(-7)}${ojo(7)}${frente}${capa(true, "frente")}</g>${volando}${capa(false, "frente")}${textos}</svg>`;
+      `${puestos.map(a => enLaCabeza(a.atras)).join("")}${capa(true, "atras")}${forma.dibujo(col.cuerpo)}${ojo(-separa)}${ojo(separa)}${frente}${capa(true, "frente")}</g>${volando}${capa(false, "frente")}${textos}</svg>`;
   }
 
-  return { duracion, fps: escena.fps || 60, px: formato.px, transparente: col.fondo === "transparente", svg };
+  return { duracion, posicion, fps: escena.fps || 60, px: formato.px, transparente: col.fondo === "transparente", svg };
 }

@@ -29,6 +29,14 @@ const muestras = {
   "aparecer + vibrar": [a.pausa(.2), a.aparecer("o", DIBUJOS.telefono(), { en: [70, 10] }), a.vibrar("o", 1.2), a.desaparecer("o"), a.pausa(.3)],
   tomar: [a.aparecer("o", DIBUJOS.estrella(), { en: [80, -40] }), a.tomar("o", { en: [0, -44] }), a.pausa(.9), a.desaparecer("o")],
   moverObjeto: [a.aparecer("o", DIBUJOS.corazon(), { en: [-80, 20] }), a.moverObjeto("o", [80, -20]), a.moverObjeto("o", [-80, 20]), a.desaparecer("o")],
+  pensar: [a.pausa(.3), a.pensar(), a.pausa(.3)],
+  trabajar: [a.pausa(.3), a.trabajar(), a.pausa(.3)],
+  esperar: [a.esperar()],
+  bloqueado: [a.pausa(.3), a.bloqueado(), a.pausa(.3)],
+  listo: [a.pausa(.3), a.listo(), a.pausa(.4)],
+  esquivar: [a.pausa(.4), a.esquivar(), a.pausa(.3), a.esquivar({ hacia: "derecha" }), a.pausa(.4)],
+  caer: [a.pausa(.2), a.caer("o", DIBUJOS.estrella(), { hasta: [60, 70], rebotes: 2 }), a.pausa(.4), a.desaparecer("o")],
+  juntos: [a.aparecer("o", DIBUJOS.corazon(), { en: [50, -20] }), a.juntos(a.moverA([-50, 20], 1), a.moverObjeto("o", [-95, -30], 1)), a.juntos(a.moverA([0, 0], 1), a.moverObjeto("o", [50, -20], 1)), a.desaparecer("o")],
   "globo de diálogo": [a.pausa(.2), a.aparecer("o", DIBUJOS.globo("Hola"), { en: [10, -62], mira: false }), a.pausa(1.2), a.desaparecer("o")],
 };
 

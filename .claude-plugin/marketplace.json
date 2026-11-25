@@ -8,7 +8,7 @@
     {
       "name": "orbi",
       "source": "./",
-      "description": "Videos y animaciones con Orbi, un monito animado en SVG: animaciones encadenables, accesorios, objetos propios, rótulos y salida a mp4 o webm transparente."
+      "description": "Videos y animaciones con Orbi, un personaje animado en SVG de cualquier forma: 36 siluetas, estados, animaciones encadenables, accesorios, objetos propios y salida a mp4 o webm transparente."
     }
   ]
 }
