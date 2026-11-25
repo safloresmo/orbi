@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animaciones del monito</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: #eef0ec;
+    color: #15171d;
+    font: 500 14px/1.3 "Inter", system-ui, sans-serif;
+  }
+  h1 { font-size: 18px; margin: 4px 0 14px; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  figure { margin: 0; border-radius: 14px; overflow: hidden; background: #f8f9f6; }
+  figure svg { display: block; width: 100%; aspect-ratio: 1; }
+  figcaption { padding: 8px 10px 10px; font-family: ui-monospace, monospace; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<h1>Animaciones del monito</h1>
+<main class="rejilla" id="rejilla"></main>
+
+<script type="module">
+import { monito } from "./monito.js";
+import muestras from "./galeria.js";
+
+const rejilla = document.getElementById("rejilla");
+const celdas = muestras.map(({ nombre, escena }) => {
+  const figura = document.createElement("figure");
+  const dibujo = document.createElement("div");
+  const pie = document.createElement("figcaption");
+  pie.textContent = nombre;
+  figura.append(dibujo, pie);
+  rejilla.append(figura);
+  return { dibujo, m: monito(escena) };
+});
+
+const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+requestAnimationFrame(function cuadro(ahora) {
+  for (const { dibujo, m } of celdas) dibujo.innerHTML = m.svg(quieto ? m.duracion / 2 : (ahora / 1000) % m.duracion);
+  if (!quieto) requestAnimationFrame(cuadro);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monito</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 14px;
+    padding: 16px;
+    background: #eef0ec;
+    color: #15171d;
+    font: 500 14px/1.2 "Inter", system-ui, sans-serif;
+  }
+  /* Tablero de ajedrez para ver el fondo transparente */
+  .escenario {
+    max-width: 100%;
+    max-height: 78vh;
+    border-radius: 18px;
+    overflow: hidden;
+    background: repeating-conic-gradient(#e3e6e1 0 25%, #f4f5f2 0 50%) 0 0 / 24px 24px;
+  }
+  .escenario svg { display: block; width: 100%; height: 100%; }
+  .controles { display: flex; gap: 10px; align-items: center; width: min(100%, 760px); }
+  .controles input { flex: 1; accent-color: #ff6a3d; }
+  .controles button {
+    font: inherit;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 99px;
+    background: #15171d;
+    color: #fff;
+    cursor: pointer;
+  }
+  .controles button[aria-pressed="true"] { background: #ff6a3d; }
+</style>
+</head>
+<body>
+<div class="escenario" id="escenario" role="img" aria-label="Animación del monito"></div>
+<div class="controles">
+  <button id="lento" aria-pressed="false">Cámara lenta</button>
+  <input id="tiempo" type="range" min="0" max="1" step="0.001" value="0" aria-label="Tiempo del bucle">
+</div>
+
+<script type="module">
+import { monito, FORMATOS } from "./monito.js";
+import escena from "./escena.js";
+
+const m = monito(escena);
+const { ancho, alto } = FORMATOS[escena.formato || "horizontal"];
+const escenario = document.getElementById("escenario");
+const tiempo = document.getElementById("tiempo"), lento = document.getElementById("lento");
+escenario.style.aspectRatio = `${ancho} / ${alto}`;
+escenario.style.width = `min(100%, ${Math.round(78 * ancho / alto)}vh, 960px)`;
+tiempo.max = m.duracion;
+
+const dibujar = t => { escenario.innerHTML = m.svg(t); };
+let t = 0, velocidad = 1, arrastrando = false, antes = performance.now();
+
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  dibujar(m.duracion / 2);
+} else {
+  requestAnimationFrame(function cuadro(ahora) {
+    if (!arrastrando) {
+      t = (t + Math.min(.05, (ahora - antes) / 1000) * velocidad) % m.duracion;
+      tiempo.value = t;
+    }
+    antes = ahora;
+    dibujar(t);
+    requestAnimationFrame(cuadro);
+  });
+}
+
+lento.addEventListener("click", () => {
+  velocidad = velocidad === 1 ? .25 : 1;
+  lento.setAttribute("aria-pressed", velocidad !== 1);
+});
+tiempo.addEventListener("input", () => { arrastrando = true; t = +tiempo.value; dibujar(t); });
+tiempo.addEventListener("change", () => { arrastrando = false; });
+</script>
+</body>
+</html>

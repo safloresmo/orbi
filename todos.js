@@ -1,0 +1,36 @@
+// Un solo plano con todas las animaciones y los cuatro accesorios, cada una con su rótulo.
+import { secuencia, animaciones as a } from "./monito.js";
+
+export default {
+  fps: 60,
+  colores: { fondo: "#f8f9f6", cuerpo: "#15171d", ojos: "#ffffff", acento: "#ff6a3d" },
+  ...secuencia([
+    ["Peek", a.asomarse()],
+    ["Enter", a.entrar()],
+    ["Look around", a.mirarAlrededor()],
+    ["Put on headphones", a.ponerse("audifonos", { crece: 1.25 })],
+    ["Nod", a.asentir()],
+    ["Shake head", a.negar()],
+    ["Curious", a.curiosear()],
+    ["Take off", a.quitarse("audifonos")],
+    ["Jump", a.saltar()],
+    ["Flip", a.voltereta()],
+    ["Move", a.moverA([-110, 8])],
+    ["Put on glasses", a.ponerse("lentes", { color: "#ffffff", desde: [-52, -50] })],
+    ["Surprise", a.sorpresa()],
+    ["Shiver", a.temblar()],
+    ["Take off", a.quitarse("lentes")],
+    ["Move", a.moverA([110, 8])],
+    ["Put on cap", a.ponerse("gorra")],
+    ["Dance", a.bailar(2)],
+    ["Take off", a.quitarse("gorra")],
+    ["Move", a.moverA([0, 0])],
+    ["Put on crown", a.ponerse("corona", { color: "#ffc93d" })],
+    ["Grow", a.crecer(1.2)],
+    ["Celebrate", a.celebrar()],
+    ["Sleep", a.dormir(2.6)],
+    ["Float", a.flotar(2)],
+    a.pausa(.3),
+    ["Exit", a.salir()],
+  ], { formato: "horizontal" }),
+};
